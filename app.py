@@ -253,7 +253,7 @@ class Studio(QMainWindow):
         try:
             url = self.viewer.url_for(path)
             if not QDesktopServices.openUrl(QUrl(url)):
-                raise OSError("Windows 기본 브라우저를 열 수 없습니다.")
+                raise OSError("기본 브라우저를 열 수 없습니다.")
         except (OSError, ValueError) as error:
             QMessageBox.warning(self, "3D 뷰어를 열 수 없습니다", str(error))
             return

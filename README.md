@@ -1,6 +1,41 @@
-# Fauna Studio
+# Fauna Studio · Mac 개발용
 
-동물 사진 한 장에서 종 후보를 찾고, 같은 종의 참고 사진을 비교하고, 선택한 사진으로 3D 모델을 만드는 Windows 데스크톱 프로그램입니다.
+동물 사진 한 장에서 종 후보를 찾고, 같은 종의 참고 사진을 비교하고, 선택한 사진으로 3D 모델을 만드는 로컬 데스크톱 프로그램입니다. 이 저장소는 [Windows 원본](https://github.com/HighDpsHotCat/fauna-studio)의 이력을 이어받은 Mac 개발용 저장소입니다.
+
+## Mac에서 시작하기
+
+Apple Silicon(M 시리즈) 맥북과 arm64 Python 3.11을 기준으로 구성했습니다. 현재 고정된 PyTorch 2.9.1의 macOS 패키지는 arm64용입니다. macOS 14 이상에서 시작하고, Blender 로우폴리 변환에는 해당 Mac에서 실행 가능한 Blender를 설치하세요. Python 3.10 환경도 실행기가 지원합니다.
+
+터미널에서 다음 명령을 실행합니다.
+
+```bash
+git clone https://github.com/HighDpsHotCat/fauna-studio-mac.git
+cd fauna-studio-mac
+./run.command
+```
+
+첫 실행은 이 폴더의 `.venv`를 만들고 Python 패키지를 설치합니다. 이후에는 Finder에서 `run.command`를 더블 클릭하거나 같은 명령으로 실행할 수 있습니다. GitHub에서 ZIP으로 받았다면 먼저 `chmod +x run.command`를 실행하세요. 코드 수정 뒤 앱을 다시 열면 변경 내용이 적용됩니다.
+
+Python 설치 경로가 다른 경우에는 `FAUNA_PYTHON=/opt/homebrew/bin/python3.11 ./run.command`처럼 지정할 수 있습니다. 이미 생성된 `.venv`가 있으면 그 환경을 재사용합니다. Python 아키텍처는 `python3.11 -c 'import platform; print(platform.machine())'`로 확인할 수 있으며 출력은 `arm64`여야 합니다.
+
+Mac의 BioCLIP·TripoSR 연산은 CPU로 실행됩니다. 첫 사용 시 AI 모델 약 3.3 GB를 내려받으며 CPU 3D 생성 시간은 사진과 Mac 사양에 따라 달라집니다. Apple GPU를 사용하는 MPS 최적화는 이후 개발 항목입니다. Blender는 `/Applications/Blender.app` 또는 `~/Applications/Blender.app`에서 자동으로 찾습니다. 다른 위치에 설치했다면 앱의 **Blender 실행 파일 선택…**에서 `Blender.app` 폴더를 지정하세요.
+
+## Mac 개발 확인
+
+의존성을 설치한 가상 환경에서 다음 명령으로 화면 생성, TripoSR 작업 프로세스 실행·취소, Blender 앱 경로, 예제 GLB 뷰어 서버를 확인합니다.
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+GitHub Actions에서도 Mac arm64와 Windows에서 이 검사를 실행합니다. AI 가중치를 사용하는 실제 종 분류·3D 생성, Blender 실행, 브라우저의 회전·확대 조작은 맥북에서 다음 순서로 확인하세요.
+
+1. `./run.command`로 앱을 열고 예제 사진으로 종 분류와 커먼스 검색을 실행합니다.
+2. 원본 사진에서 3D 모델을 생성해 한글·공백이 있는 경로에 저장합니다.
+3. **로우폴리로 변환…**에서 목표 삼각형 수를 3,000으로 정해 별도 GLB를 저장합니다.
+4. 두 GLB를 **3D 뷰어로 열기**에서 열어 회전과 확대·축소를 확인합니다.
+
+`examples/`의 GLB를 사용하면 AI 모델 다운로드 전에 Blender와 뷰어를 확인할 수 있습니다.
 
 ## Windows 실행 파일
 
@@ -10,13 +45,13 @@ Python, Qt, Three.js와 CPU·NVIDIA CUDA용 추론 라이브러리가 포함되�
 
 설치 위치는 사용자 계정의 로컬 앱 데이터 폴더 아래 FaunaStudio입니다. 설치 파일을 지운 뒤에도 설치된 앱은 실행됩니다. 앱을 제거하려면 종료 후 해당 설치 폴더와 시작 메뉴의 Fauna Studio 바로 가기를 삭제하세요.
 
-## 소스에서 실행
+## Windows에서 소스 실행
 
 Windows PowerShell에서 프로젝트를 복제합니다. Git, 64비트 Python 3.10과 Windows Python 실행기(`py`)를 준비하세요. 로우폴리 변환에는 Blender도 설치해야 합니다.
 
 ```powershell
-git clone https://github.com/HighDpsHotCat/fauna-studio.git
-cd fauna-studio
+git clone https://github.com/HighDpsHotCat/fauna-studio-mac.git
+cd fauna-studio-mac
 .\run.cmd
 ```
 
@@ -42,7 +77,7 @@ cd fauna-studio
 | `web_viewer.py`, `viewer/` | 로컬 HTTP 서버와 Three.js 뷰어 |
 | `packaging/` | Windows 설치 파일 빌드 |
 
-변경 후 `run.cmd`로 실행하여 관련 기능을 확인하세요. `assets/red-fox.jpg`로 분류·3D 생성을 확인하고, `examples/`의 GLB로 로우폴리 변환과 뷰어를 확인할 수 있습니다. 작업 환경과 배포 결과물은 `.gitignore`에서 관리합니다. 예제 이미지·모델의 출처와 라이선스는 아래에, 포함된 외부 코드의 라이선스는 각 `vendor` 폴더에 있습니다.
+변경 후 Mac에서는 `run.command`, Windows에서는 `run.cmd`로 실행하여 관련 기능을 확인하세요. `assets/red-fox.jpg`로 분류·3D 생성을 확인하고, `examples/`의 GLB로 로우폴리 변환과 뷰어를 확인할 수 있습니다. 작업 환경과 배포 결과물은 `.gitignore`에서 관리합니다. 예제 이미지·모델의 출처와 라이선스는 아래에, 포함된 외부 코드의 라이선스는 각 `vendor` 폴더에 있습니다.
 
 ## 3D 생성과 저장
 
@@ -60,7 +95,7 @@ cd fauna-studio
 2. 원본의 삼각형 수를 확인하고 **목표 삼각형 수**를 입력합니다. 기본값은 **3,000개**입니다.
 3. **변환하여 별도 GLB 저장…**을 눌러 새 파일의 위치를 선택합니다. 완료 화면에서 실제 삼각형 수를 확인하거나 저장 폴더를 열 수 있습니다.
 
-변환은 설치된 Blender를 백그라운드에서 실행합니다. Windows 표준 설치 폴더와 PATH에서 실행 파일을 찾으며, 포터블 설치본은 **Blender 실행 파일 선택…**으로 지정할 수 있습니다. 이 PC에서는 Blender 5.2.2 LTS로 검증했습니다. [Blender 다운로드](https://www.blender.org/download/)
+변환은 설치된 Blender를 백그라운드에서 실행합니다. Mac의 Applications 폴더, Windows 표준 설치 폴더와 PATH에서 실행 파일을 찾습니다. 다른 설치 위치는 **Blender 실행 파일 선택…**으로 지정할 수 있습니다. Windows 원본은 Blender 5.2.2 LTS로 검증했습니다. [Blender 다운로드](https://www.blender.org/download/)
 
 목표값은 모델 전체의 삼각형 예산입니다. Blender가 모서리를 합치는 과정에서 정확한 개수가 불가능하면 목표 이하의 가까운 결과를 저장합니다. 원본이 이미 목표 이하이면 동일한 GLB를 선택한 새 위치에 복사합니다. 정점 색상과 원본 사진의 출처 정보도 로우폴리 GLB에 보관됩니다.
 

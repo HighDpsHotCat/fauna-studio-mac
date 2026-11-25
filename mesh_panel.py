@@ -208,6 +208,10 @@ class MeshPanel(GlbTaskPanel):
 
         # Launch the interpreter itself so killing the QProcess stops inference.
         env = QProcessEnvironment.systemEnvironment()
-        env.insert("__PYVENV_LAUNCHER__", str(Path(sys.executable).with_name("python.exe")))
-        executable = Path(sys._base_executable).with_name("python.exe")
+        env.remove("__PYVENV_LAUNCHER__")
+        executable = Path(sys.executable)
+        if sys.platform == "win32":
+            # Windows venv executables are redirectors. Start Python directly.
+            env.insert("__PYVENV_LAUNCHER__", str(executable.with_name("python.exe")))
+            executable = Path(sys._base_executable).with_name("python.exe")
         self.run_worker(source["title"], output, executable, prepare_args, environment=env)

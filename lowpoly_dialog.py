@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sys
 
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QDialog, QFileDialog, QHBoxLayout, QSpinBox, QVBoxLayout
@@ -14,11 +15,28 @@ from ui import button, label, panel
 WORKER = Path(__file__).resolve().with_name("blender_lowpoly.py")
 
 
+def blender_executable(path):
+    path = Path(path).expanduser()
+    if path.suffix.lower() == ".app":
+        path = path / "Contents" / "MacOS" / "Blender"
+    return path if path.is_file() else None
+
+
 def find_blender():
     saved = QSettings("Fauna Studio", "Fauna Studio").value("blender/executable", "")
-    for candidate in (saved, shutil.which("blender.exe")):
-        if candidate and Path(candidate).is_file():
-            return Path(candidate)
+    command = "blender.exe" if sys.platform == "win32" else "blender"
+    for candidate in (saved, shutil.which(command)):
+        if candidate:
+            executable = blender_executable(candidate)
+            if executable:
+                return executable
+    if sys.platform == "darwin":
+        for folder in (Path("/Applications"), Path.home() / "Applications"):
+            for bundle in sorted(folder.glob("Blender*.app")):
+                executable = blender_executable(bundle)
+                if executable:
+                    return executable
+        return None
     folders = []
     for base in (os.environ.get("ProgramFiles"), os.environ.get("LOCALAPPDATA")):
         if base:
@@ -57,7 +75,7 @@ class LowPolyDialog(QDialog):
         row.addWidget(self.target, 1)
         box.addLayout(row)
         self.blender_button = button("", self.browse_blender, "link")
-        self.blender_button.setToolTip(str(self.blender or "blender.exe"))
+        self.blender_button.setToolTip(str(self.blender or "Blender"))
         self.blender_button.setText("Blender 실행 파일 변경…" if self.blender else "Blender 실행 파일 선택…")
         box.addWidget(self.blender_button, 0, Qt.AlignmentFlag.AlignLeft)
         self.convert = button("변환하여 별도 GLB 저장…", self.start, "primary")
@@ -92,13 +110,22 @@ class LowPolyDialog(QDialog):
         self.input_info.setToolTip(str(path))
 
     def browse_blender(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Blender 실행 파일 선택",
-                                              str(self.blender or ""), "Blender (blender.exe)")
+        if sys.platform == "darwin":
+            path = QFileDialog.getExistingDirectory(
+                self, "Blender.app 폴더 선택", "/Applications",
+                QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontUseNativeDialog)
+        else:
+            path, _ = QFileDialog.getOpenFileName(self, "Blender 실행 파일 선택",
+                                                  str(self.blender or ""), "Blender (blender.exe blender)")
         if path:
-            self.blender = Path(path)
+            executable = blender_executable(path)
+            if executable is None:
+                self.blender_button.setText("Blender 실행 파일을 찾을 수 없습니다. 다시 선택…")
+                return
+            self.blender = executable
             self.blender_button.setText("Blender 실행 파일 변경…")
-            self.blender_button.setToolTip(path)
-            QSettings("Fauna Studio", "Fauna Studio").setValue("blender/executable", path)
+            self.blender_button.setToolTip(str(executable))
+            QSettings("Fauna Studio", "Fauna Studio").setValue("blender/executable", str(executable))
 
     def choose_output(self, proposed):
         return choose_glb_output(self, "로우폴리 모델 저장 위치", proposed)
